@@ -13,14 +13,68 @@
 
 (println "App initialize!")
 
-;; define your app data so that it doesn't get over-written on reload
+;;--------------------------------------------------------------------------
+;; State 
+;;--------------------------------------------------------------------------
 
 (defonce app-state (atom nil))
 
-(defrecord IOError [msg-key])
+;;--------------------------------------------------------------------------
+;; Components 
+;;--------------------------------------------------------------------------
+
+(defn Line [name samples]
+  (let [sample1 (first samples)
+        sample2 (second samples)
+        sign    #(if (pos? %) "+" "-")]
+      [:tr
+       [:td (str name)]
+       [:td (sign sample1)]
+       [:td (Math/abs sample1)]
+       [:td (sign sample2)]
+       [:td (Math/abs sample2)]]))
+
+(defn Section [lines]
+  [:<> 
+       [:tr
+        [:td {:colSpan 5} "Секция"]]
+       (into [:<>] (for [i lines] 
+                     ^{:key i} 
+                     (let [{:keys [name samples]} i]
+                       (Line name samples))))])
+
+(defn Station [name sections]
+  [:div.card
+       [:div.card-header
+        [:p.card-header-title
+         (str name)]]
+       [:div.card-content
+        [:div.content
+         [:table.table
+          [:thead
+           [:tr
+            [:td "Линия"]
+            [:td "+/-"]
+            [:td "Нагрузка"]
+            [:td "+/-"]
+            [:td "Нагрузка"]]]
+          (into [:tbody] (for [i sections] 
+                           ^{:key i} 
+                           (let [{:keys [lines]} i]
+                             (Section lines))))]]]])
+
+;;--------------------------------------------------------------------------
+;; Protocols 
+;;--------------------------------------------------------------------------
 
 (defprotocol IRenderLoads
   (render [this]))
+
+;;--------------------------------------------------------------------------
+;; Errors 
+;;--------------------------------------------------------------------------
+
+(defrecord IOError [msg-key])
 
 (def errors-map
   {:error-on-data-loading "Ошибка при загрузке данных с сервера"
@@ -58,50 +112,15 @@
         [:div.content
          [:p (str error-msg ": " path-msg)]]]])))
 
-(extend-type t/Line
-  IRenderLoads
-  (render [this]
-    (let [name    (:name this)
-          samples (:samples this)
-          sample1 (first samples)
-          sample2 (second samples)
-          sign    #(if (pos? %) "+" "-")]
-      [:tr
-       [:td (str name)]
-       [:td (sign sample1)]
-       [:td (Math/abs sample1)]
-       [:td (sign sample2)]
-       [:td (Math/abs sample2)]])))
-
-(extend-type t/Section
-  IRenderLoads
-  (render [this]
-    (let [lines (:lines this)]
-      [:<> 
-       [:tr
-        [:td {:colspan 5} "Секция"]]
-       (into [:<>] (for [item lines] ^{:key item} (render item)))])))
+;;--------------------------------------------------------------------------
+;; Types and protocols extensions
+;;--------------------------------------------------------------------------
 
 (extend-type t/Station
   IRenderLoads
   (render [this]
-    (let [name     (:name this)
-          sections (:sections this)]
-      [:div.card
-       [:div.card-header
-        [:p.card-header-title
-         (str name)]]
-       [:div.card-content
-        [:div.content
-         [:table.table
-          [:thead
-           [:tr
-            [:td "Линия"]
-            [:td "+/-"]
-            [:td "Нагрузка"]
-            [:td "+/-"]
-            [:td "Нагрузка"]]]
-          (into [:tbody] (for [item sections] ^{:key item} (render item)))]]]])))
+    (let [{:keys [name sections]} this]
+      (Station name sections))))
 
 (extend-protocol IRenderLoads
   List
@@ -114,6 +133,10 @@
   (render [this]
     nil))
 
+;;--------------------------------------------------------------------------
+;; Fetching data
+;;--------------------------------------------------------------------------
+
 (GET "/stations.json" 
        {:response-format :json
         :keywords? true
@@ -124,11 +147,15 @@
                          (reset! app-state (->IOError :error-on-data-loading))
                          (.log js/console (str "Error on data loading")))})
 
-(defn hello-world []
+;;--------------------------------------------------------------------------
+;; Main app 
+;;--------------------------------------------------------------------------
+
+(defn main-app []
   [:div
    (render @app-state)])
 
-(reagent/render-component [hello-world]
+(reagent/render-component [main-app]
                           (. js/document (getElementById "app")))
 
 (defn on-js-reload []
