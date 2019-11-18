@@ -1,0 +1,25 @@
+/* some style */
+.site {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+div.message.in-card {
+    margin-bottom: 0px !important;
+}
+
+.site-content {
+    flex: 1 0 auto;
+}
+
+section.section {
+    padding: 2rem 1.5rem;
+}
+
+div.navbar-brand {
+    padding: 0.8rem 2rem;
+}
+
+
+
