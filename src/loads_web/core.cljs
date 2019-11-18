@@ -218,7 +218,7 @@
 ;; Fetching data
 ;;--------------------------------------------------------------------------
 
-(GET "/stations.json" 
+(GET "stations.json" 
      {:response-format :json
       :keywords? true
       :handler (fn [arg]
