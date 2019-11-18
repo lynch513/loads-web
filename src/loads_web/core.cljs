@@ -1,67 +1,158 @@
 (ns loads-web.core
-    (:require 
-      [ajax.core :refer [GET]]
-      [org.clojars.lynch.loads.io :as io]
-      [org.clojars.lynch.loads.types :as t]
-      [org.clojars.lynch.loads.errors :as e]
-      [reagent.core :as reagent :refer [atom]]
-      [clojure.string :as string]
-      [clojure.spec.alpha :as s]
-      ))
+  (:require 
+    [ajax.core :refer [GET]]
+    [clojure.string :as string]
+    [reagent.core :as reagent :refer [atom]]
+    ;;
+    [org.clojars.lynch.loads.io :as io]
+    [org.clojars.lynch.loads.types :as t]
+    [org.clojars.lynch.loads.errors :as e]
+    [org.clojars.lynch.loads.fake :refer [recalc-load]]
+    [org.clojars.lynch.loads.calc :refer [recalc-samples]]
+    ))
 
 (enable-console-print!)
 
 (println "App initialize!")
 
 ;;--------------------------------------------------------------------------
-;; State 
+;; State and handlers
 ;;--------------------------------------------------------------------------
 
-(defonce app-state (atom nil))
+(defonce station-list (atom nil))
+(defonce current-station (atom nil))
+
+(defn set-current-station! [name]
+  (let [station (first (filter #(= (:name %) name) @station-list))]
+    (reset! current-station station)))
+
+(defn reset-current-station! []
+  (reset! current-station nil))
+
+(defn recalc-load-on-current-station! []
+  (swap! current-station #(recalc-samples % recalc-load)))
 
 ;;--------------------------------------------------------------------------
 ;; Components 
 ;;--------------------------------------------------------------------------
 
+(defn- right-arrow 
+  ([]
+   [:span {:dangerouslySetInnerHTML {:__html "&rarr;"}}])
+  ([text]
+   [:span text (right-arrow)]))
+
+(defn- copyright 
+  ([]
+   [:span {:dangerouslySetInnerHTML {:__html "&copy;"}}])
+  ([text]
+   [:span (copyright) (str " ") text]))
+
 (defn Line [name samples]
   (let [sample1 (first samples)
         sample2 (second samples)
         sign    #(if (pos? %) "+" "-")]
-      [:tr
-       [:td (str name)]
-       [:td (sign sample1)]
-       [:td (Math/abs sample1)]
-       [:td (sign sample2)]
-       [:td (Math/abs sample2)]]))
+    [:tr
+     [:td (str name)]
+     [:td (sign sample1)]
+     [:td (Math/abs sample1)]
+     [:td (sign sample2)]
+     [:td (Math/abs sample2)]]))
 
 (defn Section [lines]
   [:<> 
-       [:tr
-        [:td {:colSpan 5} "Секция"]]
-       (into [:<>] (for [i lines] 
-                     ^{:key i} 
-                     (let [{:keys [name samples]} i]
-                       (Line name samples))))])
+   [:tr
+    [:td {:colSpan 5} "Секция"]]
+   (into [:<>] (for [i lines] 
+                 ^{:key i} 
+                 (let [{:keys [name samples]} i]
+                   (Line name samples))))])
 
 (defn Station [name sections]
   [:div.card
-       [:div.card-header
-        [:p.card-header-title
-         (str name)]]
-       [:div.card-content
-        [:div.content
-         [:table.table
-          [:thead
-           [:tr
-            [:td "Линия"]
-            [:td "+/-"]
-            [:td "Нагрузка"]
-            [:td "+/-"]
-            [:td "Нагрузка"]]]
-          (into [:tbody] (for [i sections] 
-                           ^{:key i} 
-                           (let [{:keys [lines]} i]
-                             (Section lines))))]]]])
+   [:div.card-header
+    [:p.card-header-title
+     (str name)]
+    [:nav.breadcrumb.card-header-icon
+     {:aria-label "breadcrumbs"}
+     [:ul 
+      [:li {:key :recalc}
+       [:a 
+        {:on-click #(recalc-load-on-current-station!)}
+        "Перерасчет"]]
+      [:li {:key :reset}
+       [:a
+        {:on-click #(set-current-station! name)} 
+        "Сброс"]]
+      [:li {:key :close}
+       [:a 
+        {:on-click #(reset-current-station!)}
+        "Закрыть"]]]]]
+   [:div.card-content
+    [:div.content
+     [:table.table.is-striped
+      [:thead
+       [:tr
+        [:td "Линия"]
+        [:td "+/-"]
+        [:td "Нагрузка"]
+        [:td "+/-"]
+        [:td "Нагрузка"]]]
+      (into [:tbody] (for [i sections] 
+                       ^{:key i} 
+                       (let [{:keys [lines]} i]
+                         (Section lines))))]]]])
+
+(defn StationTitle [name]
+  [:div.card
+   [:div.card-header
+    [:p.card-header-title
+     (str name)]
+    [:a.card-header-icon 
+     {:on-click #(set-current-station! name)}
+     (right-arrow "Открыть")]]])
+
+(defn StationItem [name]
+  (let [current-name     (:name @current-station)
+        current-sections (:sections @current-station)]
+    (if (= name current-name)
+      (Station name current-sections)
+      (StationTitle name))))
+
+;; (defn ErrorMsg [title msg]
+;;   [:div.card
+;;    [:div.card-header
+;;     [:p.card-header-title title]]
+;;    [:div.card-content
+;;     [:div.content
+;;      [:p msg]]]])
+
+(defn ErrorMsg [title msg]
+  [:div.message.is-danger.in-card
+   [:div.message-header
+    [:p title]]
+   [:div.message-body
+    [:p msg]]])
+
+(defn Layout [& children]
+  [:div.site
+   [:nav.navbar.is-dark
+    {:role "navigation"
+     :aria-label "main navigation"}
+    [:div.navbar-brand
+     [:h1.navbar-item.title "Нагрузки 2019"]
+     ]]
+   [:section.section.site-content
+    [:div.container
+     [:div.columns.is-multiline
+      (into [:div.column.is-10.is-offset-1] children)]]]
+   [:footer.footer
+    [:div.content {:style {:text-align "center"}}
+     [:p 
+      [:a {:href "https://github.com/lynch513/loads-web"}
+       "https://github.com/lynch513/loads-web"]
+      (str " ")
+      (copyright [:span.is-italic "2019"])]]]])
 
 ;;--------------------------------------------------------------------------
 ;; Protocols 
@@ -90,12 +181,7 @@
   IRenderLoads
   (render [this]
     (let [error-msg ((:msg-key this) errors-map (:default-message errors-map))]
-      [:div.card
-       [:div.card-header
-        [:p.card-header-title "Ошибка"]]
-       [:div.card-content
-        [:div.content
-         [:p error-msg]]]])))
+      (ErrorMsg "Ошибка" error-msg))))
 
 (extend-type e/SError
   IRenderLoads
@@ -105,12 +191,7 @@
           path-msg  (string/join " -> " (remove string/blank? path))
           name      (first path)
           error-title (str (when name (str name " ")) "Ошибка")]
-      [:div.card
-       [:div.card-header
-        [:p.card-header-title error-title]]
-       [:div.card-content
-        [:div.content
-         [:p (str error-msg ": " path-msg)]]]])))
+      (ErrorMsg error-title (str error-msg ": " path-msg)))))
 
 ;;--------------------------------------------------------------------------
 ;; Types and protocols extensions
@@ -119,14 +200,14 @@
 (extend-type t/Station
   IRenderLoads
   (render [this]
-    (let [{:keys [name sections]} this]
-      (Station name sections))))
+    (let [{:keys [name]} this]
+      (StationItem name))))
 
 (extend-protocol IRenderLoads
   List
   LazySeq
   (render [this]
-    (into [:div] (for [item this] ^{:key item} (render item)))))
+    (into [:<>] (for [item this] ^{:key item} (render item)))))
 
 (extend-type nil
   IRenderLoads
@@ -138,22 +219,22 @@
 ;;--------------------------------------------------------------------------
 
 (GET "/stations.json" 
-       {:response-format :json
-        :keywords? true
-        :handler (fn [arg]
-                   (reset! app-state (map #(io/from-map ::t/->Station %) arg))
-                   (.log js/console "Load data completed ..."))
-        :error-handler (fn [_]
-                         (reset! app-state (->IOError :error-on-data-loading))
-                         (.log js/console (str "Error on data loading")))})
+     {:response-format :json
+      :keywords? true
+      :handler (fn [arg]
+                 (reset! station-list (map #(io/from-map ::t/->Station %) arg))
+                 (.log js/console "Load data completed ..."))
+      :error-handler (fn [_]
+                       (reset! station-list (->IOError :error-on-data-loading))
+                       (.log js/console (str "Error on data loading")))})
 
 ;;--------------------------------------------------------------------------
 ;; Main app 
 ;;--------------------------------------------------------------------------
 
 (defn main-app []
-  [:div
-   (render @app-state)])
+  (Layout
+    (render @station-list)))
 
 (reagent/render-component [main-app]
                           (. js/document (getElementById "app")))
@@ -164,26 +245,3 @@
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
 
-(comment
-  (GET "/stations2.json" 
-       {:response-format :json
-        :keywords? true
-        :handler (fn [arg]
-                   (reset! app-state (map #(io/from-map ::t/->Station %) arg))
-                   #_(reset! app-state (io/from-map ::t/->Stations arg))
-                   (.log js/console "Load data completed ..."))
-        :error-handler (fn [_]
-                         (reset! app-state (->IOError :error-on-data-loading))
-                         (.log js/console (str "Error on data loading")))})
-  (type (io/from-map ::t/->Line {:name "A" :samples [1 2]}))
-  (io/from-map ::t/->Line {:name "" :samples [1 2]})
-  (let [data {:name "" :samples [1 2]}
-        conf (s/conform ::t/->Line data)]
-    (if (= conf ::s/invalid)
-      (->> data
-           (s/explain-data ::t/->Line)
-           #_(e/get-error-messages)
-           #_(map #(e/->SError (last %) (first %))))))
-  (deref app-state)
-  (render @app-state)
-  )
