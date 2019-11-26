@@ -1,39 +1,48 @@
 # loads-web
 
-FIXME: Write a one-line description of your library/project.
+A Clojure library designed to ... calculate loads on city power electric stations
 
 ## Overview
 
-FIXME: Write a paragraph about the library/project and highlight its goals.
+A ClojureScript and Reagent util designed to ... calculate loads on city power electric stations. This software is used by the employee of electric grid company of Saint-Petersburg, Russia. This is expiremental software and used open source data. If you have any question please e-mail me.  
+
+## Usage
+
+See web app at [https://lynch513.github.io/loads-web/](https://lynch513.github.io/loads-web/)
 
 ## Setup
 
+First install leiningen util:
+
+[https://leiningen.org/](https://leiningen.org)
+
+At now moment you can install and use my org.clojars.lynch/loads library. In near future I will add this library to clojars.org ...
+
+```bash
+$ git clone https://github.com/lynch513/loads.git
+$ lein deps
+$ lein install
+```
+
+After local installation *org.clojars.lynch/loads* you can clone this repo: 
+
+```bash
+$ git clone https://github.com/lynch513/loads-web.git
+$ lein deps
+$ lein install
+```
+
 To get an interactive development environment run:
 
-    lein figwheel
+```bash
+$ lein figwheel
+```
+and open your browser at [localhost:3000](http://localhost:3000/).
 
-and open your browser at [localhost:3449](http://localhost:3449/).
-This will auto compile and send all changes to the browser without the
-need to reload. After the compilation process is complete, you will
-get a Browser Connected REPL. An easy way to try it is:
-
-    (js/alert "Am I connected?")
-
-and you should see an alert in the browser window.
-
-To clean all compiled files:
-
-    lein clean
-
-To create a production build run:
-
-    lein do clean, cljsbuild once min
-
-And open your browser in `resources/public/index.html`. You will not
-get live reloading, nor a REPL. 
+Also see library **loads* used in this web app: [https://github.com/lynch513/loads](https://github.com/lynch513/loads)
 
 ## License
 
-Copyright © 2014 FIXME
+Copyright © 2019 FIXME
 
 Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.

@@ -89,8 +89,8 @@
         {:on-click #(reset-current-station!)}
         "Закрыть"]]]]]
    [:div.card-content
-    [:div.content
-     [:table.table.is-striped
+    [:div.content.table-container
+     [:table.table.is-striped.is-fullwidth
       [:thead
        [:tr
         [:td "Линия"]
