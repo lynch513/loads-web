@@ -8,7 +8,7 @@ A ClojureScript and Reagent util designed to ... calculate loads on city power e
 
 ## Usage
 
-See web app at [https://lynch513.github.io/loads-web/](https://lynch513.github.io/loads-web/)
+See web app: [https://lynch513.github.io/loads-web/](https://lynch513.github.io/loads-web/)
 
 ## Setup
 
@@ -16,7 +16,7 @@ First install leiningen util:
 
 [https://leiningen.org/](https://leiningen.org)
 
-At now moment you can install and use my org.clojars.lynch/loads library. In near future I will add this library to clojars.org ...
+At now moment you can install and use my *org.clojars.lynch/loads* library. In near future I will add this library to clojars.org ...
 
 ```bash
 $ git clone https://github.com/lynch513/loads.git
@@ -39,7 +39,7 @@ $ lein figwheel
 ```
 and open your browser at [localhost:3000](http://localhost:3000/).
 
-Also see library **loads* used in this web app: [https://github.com/lynch513/loads](https://github.com/lynch513/loads)
+Also see library *loads* used in this web app: [https://github.com/lynch513/loads](https://github.com/lynch513/loads)
 
 ## License
 
